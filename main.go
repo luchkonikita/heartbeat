@@ -50,22 +50,26 @@ func main() {
 	sitemap := requestSitemap(sitemapURL)
 	bar.Incr()
 
-	// Create a pool of goroutines to process URLs
-	jobs := make(chan URL, buffer)
-	results := make(chan URL, buffer)
+	// Create two channels for our pipeline
+	jobs := make(chan URL)
+	results := make(chan URL)
 
+	// Spawn workers
 	for w := 1; w <= *concurrency; w++ {
-		go worker(*timeout, jobs, results)
+		worker := &Worker{time.Duration(1000000 * *timeout), jobs, results}
+		go worker.Perform(func(url URL) URL {
+			url.StatusCode = requestPage(url.Loc)
+			return url
+		})
 	}
 
-	// Put URLs in the queue for the pool and close the channel
-	for _, url := range sitemap.URLS[:*limit] {
-		jobs <- url
-	}
-	close(jobs)
+	// Spawn tasks producer
+	go producer(sitemap.URLS[:*limit], jobs)
 
 	// Listen for results and gather them
 	var report Sitemap
+
+	// TODO: Think if the final number of tasks is needed here...
 	for range sitemap.URLS[:*limit] {
 		url := <-results
 		report.URLS = append(report.URLS, url)
@@ -74,13 +78,41 @@ func main() {
 	uiprogress.Stop()
 }
 
-// A main worker function, runs concurrently
-func worker(timeout int, jobs <-chan URL, results chan<- URL) {
-	for url := range jobs {
-		url.StatusCode = requestPage(url.Loc)
-		results <- url
-		time.Sleep(time.Duration(1000000 * timeout))
+// Worker is created with the main settings: timeout and two channels.
+// First channel to read tasks from and second channels is the one to push results in.
+type Worker struct {
+	timeout        time.Duration
+	tasksChannel   <-chan URL
+	resultsChannel chan<- URL
+}
+
+// A type of function which worker uses to process tasks.
+type performFn func(URL) URL
+
+// Function expects a processor function, which should do work and return some result.
+// Function accepts a value received from tasks channel.
+// The value returned from a proccessor is sent to results channel.
+// Worker reads from tasks channel with a timeout until the channel is closed.
+func (worker Worker) Perform(processor performFn) {
+	for {
+		select {
+		case task, ok := <-worker.tasksChannel:
+			if !ok {
+				return
+			}
+			worker.resultsChannel <- processor(task)
+		case <-time.Tick(worker.timeout):
+			fmt.Println("waiting...")
+		}
 	}
+}
+
+// Simple function to be used for pushing an array into channel.
+func producer(tasks []URL, pipeline chan<- URL) {
+	for _, url := range tasks {
+		pipeline <- url
+	}
+	close(pipeline)
 }
 
 // Creates and configures a progressbar
@@ -102,15 +134,24 @@ func makeProgressBar(total int) *uiprogress.Bar {
 
 // Requests a page by URL
 func requestPage(url string) int {
-	resp, _ := http.Get(url)
-	defer resp.Body.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
 	return resp.StatusCode
 }
 
 // Downloads and parses sitemap
 func requestSitemap(url string) Sitemap {
-	resp, _ := http.Get(url)
-	content, _ := ioutil.ReadAll(resp.Body)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+	}
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
 	sitemap := Sitemap{}
 	xml.Unmarshal(content, &sitemap)
 	return sitemap
