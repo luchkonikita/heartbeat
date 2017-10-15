@@ -7,7 +7,7 @@ func TestWorkerPerform(t *testing.T) {
 	url := URL{"http://google.com", 0}
 	tasks := make(chan URL)
 	results := make(chan URL)
-	worker := NewWorker(time.Duration(0), tasks, results)
+	worker := newWorker(time.Duration(0), tasks, results)
 
 	go worker.Perform(func(url URL) URL {
 		return url

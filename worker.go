@@ -14,8 +14,8 @@ type worker struct {
 // A type of function which worker uses to process tasks.
 type performFn func(URL) URL
 
-// Constructor function for creating a worker
-func NewWorker(timeout time.Duration, tasksChannel <-chan URL, resultsChannel chan<- URL) worker {
+// newWorker - Constructor function for creating a worker
+func newWorker(timeout time.Duration, tasksChannel <-chan URL, resultsChannel chan<- URL) worker {
 	return worker{timeout, tasksChannel, resultsChannel}
 }
 
@@ -33,6 +33,7 @@ func (w worker) Perform(proc performFn) {
 				return
 			}
 			w.resultsChannel <- proc(task)
+			time.Sleep(w.timeout)
 		case <-time.Tick(w.timeout):
 			fmt.Println("waiting...")
 		}

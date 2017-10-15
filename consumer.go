@@ -5,8 +5,8 @@ type consumer struct {
 	resultsChannel <-chan URL
 }
 
-// Constructor function for creating a consumer
-func NewConsumer(resultsChannel <-chan URL) consumer {
+// newConsumer - Constructor function for creating a consumer
+func newConsumer(resultsChannel <-chan URL) consumer {
 	return consumer{resultsChannel}
 }
 

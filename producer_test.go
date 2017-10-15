@@ -8,14 +8,14 @@ func TestProducerPerform(t *testing.T) {
 		{"http://google.com", 0},
 		{"http://yandex.ru", 0},
 	}
-	producer := NewProducer(pipeline)
+	producer := newProducer(pipeline)
 
 	go producer.Perform(tasks)
 
 	for _, url := range tasks {
-		pushedUrl := <-pipeline
-		if pushedUrl != url {
-			t.Errorf("Expected %v to be equal %v", pushedUrl, url)
+		pushedURL := <-pipeline
+		if pushedURL != url {
+			t.Errorf("Expected %v to be equal %v", pushedURL, url)
 		}
 	}
 

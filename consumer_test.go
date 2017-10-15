@@ -8,7 +8,7 @@ func TestConsumerPerform(t *testing.T) {
 		{"http://google.com", 200},
 		{"http://yandex.ru", 200},
 	}
-	consumer := NewConsumer(pipeline)
+	consumer := newConsumer(pipeline)
 
 	go func() {
 		pipeline <- results[0]

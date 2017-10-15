@@ -5,8 +5,8 @@ type producer struct {
 	tasksChannel chan<- URL
 }
 
-// Constructor function for creating a producer
-func NewProducer(tasksChannel chan<- URL) producer {
+// newProducer - Constructor function for creating a producer
+func newProducer(tasksChannel chan<- URL) producer {
 	return producer{tasksChannel}
 }
 

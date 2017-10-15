@@ -11,7 +11,9 @@ func TestRequestPage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	if code, _ := RequestPage(ts.URL); code != 404 {
+	code, _ := requestPage(newClient(), ts.URL)
+
+	if code != 404 {
 		t.Errorf("Expected to return 404, got %d instead", code)
 	}
 }
@@ -41,7 +43,7 @@ func TestRequestSitemap(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	sitemap, _ := RequestSitemap(ts.URL)
+	sitemap, _ := requestSitemap(newClient(), ts.URL)
 
 	for i, url := range urls {
 		if url != sitemap.URLS[i].Loc {

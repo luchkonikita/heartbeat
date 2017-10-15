@@ -3,17 +3,32 @@ package main
 import "encoding/xml"
 import "io/ioutil"
 import "net/http"
+import "time"
 
-// Requests a page by URL
-func RequestPage(url string) (int, error) {
-	resp, err := http.Get(url)
+const (
+	clientTimeout = time.Duration(5 * time.Second)
+)
+
+// newClient - Creates a pre-configured client
+func newClient() http.Client {
+	return http.Client{
+		Timeout: clientTimeout,
+	}
+}
+
+// requestPage - Requests a page by URL
+func requestPage(c http.Client, url string) (int, error) {
+	resp, err := c.Get(url)
+	if err != nil {
+		return 0, err
+	}
 	return resp.StatusCode, err
 }
 
-// Downloads and parses sitemap
-func RequestSitemap(url string) (Sitemap, error) {
+// requestSitemap - Downloads and parses sitemap
+func requestSitemap(c http.Client, url string) (Sitemap, error) {
 	sitemap := Sitemap{}
-	resp, err := http.Get(url)
+	resp, err := c.Get(url)
 	if err != nil {
 		return sitemap, err
 	}
@@ -22,5 +37,5 @@ func RequestSitemap(url string) (Sitemap, error) {
 		return sitemap, err
 	}
 	xml.Unmarshal(content, &sitemap)
-	return sitemap, nil
+	return sitemap, err
 }
