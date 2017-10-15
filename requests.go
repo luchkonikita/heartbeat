@@ -6,7 +6,7 @@ import "net/http"
 import "time"
 
 const (
-	clientTimeout = time.Duration(5 * time.Second)
+	clientTimeout = time.Duration(25 * time.Second)
 )
 
 // newClient - Creates a pre-configured client
