@@ -11,9 +11,7 @@ const (
 
 // newClient - Creates a pre-configured client
 func newClient() http.Client {
-	return http.Client{
-		Timeout: clientTimeout,
-	}
+	return http.Client{}
 }
 
 // requestPage - Requests a page by URL
