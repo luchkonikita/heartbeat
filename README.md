@@ -32,6 +32,10 @@ by looking for 5xx responses.
       concurrency (default 5)
   -limit int
       limit for URLs to be checked (default 1000)
+  -name string
+      user name for HTTP basic auth
+  -password string
+      user password for HTTP basic auth
   -timeout int
       timeout for requests (default 300)
 ```
@@ -41,5 +45,5 @@ by looking for 5xx responses.
 - [x] Write tests
 - [x] Setup CI
 - [x] Add reporter
-- [ ] Add HTTP basic auth support
+- [x] Add HTTP basic auth support
 - [ ] Add option to write report to a file
