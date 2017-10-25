@@ -9,6 +9,11 @@ import "os"
 import "strconv"
 import "time"
 
+type AuthParams struct {
+	Name     string
+	Password string
+}
+
 // URL is a structure of <url> in <sitemap>
 type URL struct {
 	Loc        string `xml:"loc"`
@@ -21,12 +26,14 @@ type Sitemap struct {
 }
 
 // Process - Executes the program
-func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string) {
+func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, authName string, authPassword string) {
 	writesToStdout := w == os.Stdout
 
 	if writesToStdout {
 		uiprogress.Start()
 	}
+
+	authParams := AuthParams{authName, authPassword}
 
 	// Create two channels for our pipeline
 	tasks := make(chan URL)
@@ -36,7 +43,7 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	// Define timeout for workers' pool
 	workerTimeout := time.Duration(1000000 * timeout)
 
-	sitemap, err := requestSitemap(client, sitemapURL)
+	sitemap, err := requestSitemap(client, sitemapURL, authParams)
 	if err != nil {
 		log.Fatalf("Error: Failed to download the sitemap: %v", err)
 	}
@@ -58,7 +65,7 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	for w := 1; w <= concurrency; w++ {
 		worker := newWorker(workerTimeout, tasks, results)
 		go worker.Perform(func(url URL) URL {
-			statusCode, err := requestPage(client, url.Loc)
+			statusCode, err := requestPage(client, url.Loc, authParams)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}

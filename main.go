@@ -17,6 +17,10 @@ func main() {
 	concurrency := flag.Int("concurrency", dConcurrency, "concurrency")
 	limit := flag.Int("limit", dLimit, "limit for URLs to be checked")
 	timeout := flag.Int("timeout", dTimeout, "timeout for requests")
+
+	userName := flag.String("name", "", "user name for HTTP basic auth")
+	userPassword := flag.String("password", "", "user password for HTTP basic auth")
+
 	flag.Parse()
 	args := flag.Args()
 
@@ -27,5 +31,5 @@ func main() {
 
 	sitemapURL := args[0]
 
-	process(os.Stdout, *concurrency, *limit, *timeout, sitemapURL)
+	process(os.Stdout, *concurrency, *limit, *timeout, sitemapURL, *userName, *userPassword)
 }

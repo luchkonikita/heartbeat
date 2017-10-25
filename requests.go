@@ -15,8 +15,14 @@ func newClient() http.Client {
 }
 
 // requestPage - Requests a page by URL
-func requestPage(c http.Client, url string) (int, error) {
-	resp, err := c.Get(url)
+func requestPage(c http.Client, url string, authParams AuthParams) (int, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	req.SetBasicAuth(authParams.Name, authParams.Password)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := c.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -24,9 +30,16 @@ func requestPage(c http.Client, url string) (int, error) {
 }
 
 // requestSitemap - Downloads and parses sitemap
-func requestSitemap(c http.Client, url string) (Sitemap, error) {
+func requestSitemap(c http.Client, url string, authParams AuthParams) (Sitemap, error) {
 	sitemap := Sitemap{}
-	resp, err := c.Get(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.SetBasicAuth(authParams.Name, authParams.Password)
+	if err != nil {
+		return sitemap, err
+	}
+
+	resp, err := c.Do(req)
 	if err != nil {
 		return sitemap, err
 	}

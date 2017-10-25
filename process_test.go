@@ -43,7 +43,7 @@ func TestProcess(t *testing.T) {
 	ts.Start()
 
 	buf := new(bytes.Buffer)
-	process(buf, 1, 10, 200, "http://127.0.0.1:8080?sitemap=true")
+	process(buf, 1, 10, 200, "http://127.0.0.1:8080?sitemap=true", "", "")
 
 	expected := `+----+------------------------------+--------+
 | NO |             URL              | STATUS |
