@@ -21,7 +21,7 @@ by looking for 5xx responses.
 ## Example:
 
 ```
-./heartbeat -limit=100 -concurrency=8 -timeout=500 http://some-website.com/sitemap.xml
+./heartbeat -limit=100 -concurrency=8 -timeout=500 -headers="one: 1,two: 2" http://some-website.com/sitemap.xml
 ```
 
 
@@ -32,10 +32,9 @@ by looking for 5xx responses.
       concurrency (default 5)
   -limit int
       limit for URLs to be checked (default 1000)
-  -name string
-      user name for HTTP basic auth
-  -password string
-      user password for HTTP basic auth
+  -headers string
+      headers to be send with requests
+      string in format "headerName: headerValue,header2Name: header2Value"
   -timeout int
       timeout for requests (default 300)
 ```
