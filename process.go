@@ -1,17 +1,39 @@
 package main
 
-import "fmt"
-import "github.com/gosuri/uiprogress"
-import "github.com/olekukonko/tablewriter"
-import "log"
-import "io"
-import "os"
-import "strconv"
-import "time"
+import (
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"regexp"
+	"strconv"
+	"time"
 
-type AuthParams struct {
-	Name     string
-	Password string
+	"github.com/gosuri/uiprogress"
+	"github.com/olekukonko/tablewriter"
+)
+
+// TODO: Move headers somewhere
+type headers []header
+
+func (h *headers) String() string {
+	return fmt.Sprint(*h)
+}
+
+func (h *headers) Set(value string) error {
+	if len(*h) > 0 {
+		return errors.New("headers flag already set")
+	}
+
+	for _, hd := range regexp.MustCompile(",s{0,}").Split(value, -1) {
+		data := regexp.MustCompile(":s{0,}").Split(hd, 2)
+		if len(data) != 2 {
+			return errors.New("headers flag is invalid")
+		}
+		*h = append(*h, header{name: data[0], value: data[1]})
+	}
+	return nil
 }
 
 // URL is a structure of <url> in <sitemap>
@@ -26,14 +48,12 @@ type Sitemap struct {
 }
 
 // Process - Executes the program
-func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, authName string, authPassword string) {
+func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, headers []header) bool {
 	writesToStdout := w == os.Stdout
 
 	if writesToStdout {
 		uiprogress.Start()
 	}
-
-	authParams := AuthParams{authName, authPassword}
 
 	// Create two channels for our pipeline
 	tasks := make(chan URL)
@@ -43,7 +63,7 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	// Define timeout for workers' pool
 	workerTimeout := time.Duration(1000000 * timeout)
 
-	sitemap, err := requestSitemap(client, sitemapURL, authParams)
+	sitemap, err := requestSitemap(client, sitemapURL, headers)
 	if err != nil {
 		log.Fatalf("Error: Failed to download the sitemap: %v", err)
 	}
@@ -53,7 +73,7 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	}
 
 	var entiesNum int
-	if len(sitemap.URLS) > limit {
+	if len(sitemap.URLS) > limit && limit > 0 {
 		entiesNum = len(sitemap.URLS[:limit])
 	} else {
 		entiesNum = len(sitemap.URLS)
@@ -65,7 +85,7 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	for w := 1; w <= concurrency; w++ {
 		worker := newWorker(workerTimeout, tasks, results)
 		go worker.Perform(func(url URL) URL {
-			statusCode, err := requestPage(client, url.Loc, authParams)
+			statusCode, err := requestPage(client, url.Loc, headers)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}
@@ -91,8 +111,24 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 		uiprogress.Stop()
 	}
 
-	// Write a report
-	drawTable(w, report)
+	var failed []URL
+
+	// // Write a report
+	// drawTable(w, report)
+
+	for _, url := range report {
+		if url.StatusCode != 200 {
+			failed = append(failed, url)
+		}
+	}
+
+	if len(failed) > 0 {
+		drawTable(w, failed)
+	} else {
+		fmt.Println("+-------------------+\n| NO PROBLEMS FOUND |\n+-------------------+")
+	}
+
+	return len(failed) == 0
 }
 
 // Writes a report to a table and prints it
@@ -108,12 +144,12 @@ func drawTable(w io.Writer, report []URL) {
 
 // Creates and configures a progressbar
 func makeProgressBar(total int) *uiprogress.Bar {
-	bar := uiprogress.AddBar(total + 1)
+	bar := uiprogress.AddBar(total)
 	bar.AppendFunc(func(b *uiprogress.Bar) string {
 		return b.TimeElapsedString()
 	})
 	bar.PrependFunc(func(b *uiprogress.Bar) string {
-		return fmt.Sprintf("Loading page %d / %d", b.Current()-1, total)
+		return fmt.Sprintf("Loading page %d / %d", b.Current(), total)
 	})
 	return bar
 }

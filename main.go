@@ -1,25 +1,32 @@
 package main
 
-import "flag"
-import "log"
-import "os"
+import (
+	"flag"
+	"log"
+	"os"
+)
 
 const (
 	dConcurrency = 5
-	dLimit       = 1000
-	dTimeout     = 300
+	dLimit       = 0
+	dTimeout     = 500
 )
+
+type header struct {
+	name  string
+	value string
+}
 
 // The program loads sitemap by the specified URL and then requests all the pages listed in this sitemap.
 // Requests are run in parallel with the specified concurrency. For each URL program collects data.
 func main() {
 	// Parse arguments and setup variables
-	concurrency := flag.Int("concurrency", dConcurrency, "concurrency")
-	limit := flag.Int("limit", dLimit, "limit for URLs to be checked")
-	timeout := flag.Int("timeout", dTimeout, "timeout for requests")
+	concurrencyFlag := flag.Int("concurrency", dConcurrency, "concurrency")
+	limitFlag := flag.Int("limit", dLimit, "limit for URLs to be checked")
+	timeoutFlag := flag.Int("timeout", dTimeout, "timeout for requests")
 
-	userName := flag.String("name", "", "user name for HTTP basic auth")
-	userPassword := flag.String("password", "", "user password for HTTP basic auth")
+	var headersFlag headers
+	flag.Var(&headersFlag, "headers", "headers to send together with requests")
 
 	flag.Parse()
 	args := flag.Args()
@@ -31,5 +38,11 @@ func main() {
 
 	sitemapURL := args[0]
 
-	process(os.Stdout, *concurrency, *limit, *timeout, sitemapURL, *userName, *userPassword)
+	success := process(os.Stdout, *concurrencyFlag, *limitFlag, *timeoutFlag, sitemapURL, headersFlag)
+
+	if success {
+		os.Exit(0)
+	} else {
+		os.Exit(1)
+	}
 }
