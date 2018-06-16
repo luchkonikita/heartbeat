@@ -10,6 +10,7 @@ const (
 	dConcurrency = 5
 	dLimit       = 0
 	dTimeout     = 500
+	dCi          = false
 )
 
 type header struct {
@@ -24,6 +25,7 @@ func main() {
 	concurrencyFlag := flag.Int("concurrency", dConcurrency, "concurrency")
 	limitFlag := flag.Int("limit", dLimit, "limit for URLs to be checked")
 	timeoutFlag := flag.Int("timeout", dTimeout, "timeout for requests")
+	ciFlag := flag.Bool("ci", dCi, "omits progress on CI")
 
 	var headersFlag headers
 	flag.Var(&headersFlag, "headers", "headers to send together with requests")
@@ -38,7 +40,7 @@ func main() {
 
 	sitemapURL := args[0]
 
-	success := process(os.Stdout, *concurrencyFlag, *limitFlag, *timeoutFlag, sitemapURL, headersFlag)
+	success := process(os.Stdout, *concurrencyFlag, *limitFlag, *timeoutFlag, *ciFlag, sitemapURL, headersFlag)
 
 	if success {
 		os.Exit(0)
