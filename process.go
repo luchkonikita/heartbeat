@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/gosuri/uiprogress"
 	"github.com/olekukonko/tablewriter"
 )
@@ -48,8 +49,8 @@ type Sitemap struct {
 }
 
 // Process - Executes the program
-func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, headers []header) bool {
-	writesToStdout := w == os.Stdout
+func process(w io.Writer, concurrency int, limit int, timeout int, ci bool, sitemapURL string, headers []header) bool {
+	writesToStdout := w == os.Stdout && !ci
 
 	if writesToStdout {
 		uiprogress.Start()
@@ -72,14 +73,19 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 		log.Fatalf("Error: The sitemap is empty")
 	}
 
-	var entiesNum int
-	if len(sitemap.URLS) > limit && limit > 0 {
-		entiesNum = len(sitemap.URLS[:limit])
-	} else {
-		entiesNum = len(sitemap.URLS)
+	var urlCount int = len(sitemap.URLS)
+	if limit > 0 && urlCount > limit {
+		urlCount = limit
 	}
 
-	bar := makeProgressBar(entiesNum)
+	bar := makeProgressBar(urlCount)
+
+	if ci {
+		fmt.Println("Heartbeat check starting")
+		fmt.Println("Sitemap URL: ", sitemapURL)
+		fmt.Println("Total URLs: ", urlCount)
+		fmt.Println("------------------------------")
+	}
 
 	// Spawn workers
 	for w := 1; w <= concurrency; w++ {
@@ -96,13 +102,24 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 
 	// Spawn tasks producer
 	producer := newProducer(tasks)
-	go producer.Perform(sitemap.URLS[:entiesNum])
+	go producer.Perform(sitemap.URLS[:urlCount])
 
 	// Create a consumer and join results
+	counter := 0
 	consumer := newConsumer(results)
-	report := consumer.Perform(entiesNum, func() {
+	report := consumer.Perform(urlCount, func() {
 		if writesToStdout {
 			bar.Incr()
+		} else if ci {
+			counter++
+			result := <-results
+			message := fmt.Sprintf("[%d/%d] %s %d", counter, urlCount, result.Loc, result.StatusCode)
+
+			if result.StatusCode == 200 {
+				color.Green(message)
+			} else {
+				color.Red(message)
+			}
 		}
 	})
 
@@ -112,9 +129,6 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	}
 
 	var failed []URL
-
-	// // Write a report
-	// drawTable(w, report)
 
 	for _, url := range report {
 		if url.StatusCode != 200 {
