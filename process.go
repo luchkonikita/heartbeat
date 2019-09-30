@@ -15,13 +15,13 @@ import (
 )
 
 // TODO: Move headers somewhere
-type headers []header
+type parameters []parameter
 
-func (h *headers) String() string {
+func (h *parameters) String() string {
 	return fmt.Sprint(*h)
 }
 
-func (h *headers) Set(value string) error {
+func (h *parameters) Set(value string) error {
 	if len(*h) > 0 {
 		return errors.New("headers flag already set")
 	}
@@ -31,7 +31,7 @@ func (h *headers) Set(value string) error {
 		if len(data) != 2 {
 			return errors.New("headers flag is invalid")
 		}
-		*h = append(*h, header{name: data[0], value: data[1]})
+		*h = append(*h, parameter{name: data[0], value: data[1]})
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ type Sitemap struct {
 }
 
 // Process - Executes the program
-func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, headers []header) bool {
+func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL string, headers []parameter, query []parameter) bool {
 	writesToStdout := w == os.Stdout
 
 	if writesToStdout {
@@ -85,10 +85,11 @@ func process(w io.Writer, concurrency int, limit int, timeout int, sitemapURL st
 	for w := 1; w <= concurrency; w++ {
 		worker := newWorker(workerTimeout, tasks, results)
 		go worker.Perform(func(url URL) URL {
-			statusCode, err := requestPage(client, url.Loc, headers)
+			statusCode, err := requestPage(client, appendQuery(url.Loc, query), headers)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
 			}
+
 			url.StatusCode = statusCode
 			return url
 		})

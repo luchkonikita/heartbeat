@@ -19,8 +19,10 @@ func TestProcess(t *testing.T) {
 			return
 		}
 
-		if len(r.URL.Query()["page"]) > 0 {
-			pageNum := r.URL.Query()["page"][0]
+		query := r.URL.Query()
+
+		if len(query["page"]) > 0 {
+			pageNum := query["page"][0]
 			if pageNum == "1" {
 				w.WriteHeader(200)
 			}
@@ -32,7 +34,7 @@ func TestProcess(t *testing.T) {
 			return
 		}
 
-		if len(r.URL.Query()["sitemap"]) > 0 {
+		if len(query["sitemap"]) > 0 {
 			xml := `
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
           <url>
@@ -53,6 +55,8 @@ func TestProcess(t *testing.T) {
         </urlset>
       `
 			fmt.Fprintln(w, xml)
+		} else if len(query["foo"]) == 0 {
+			t.Error("Expected to assign a custom query string")
 		}
 	}))
 
@@ -64,9 +68,10 @@ func TestProcess(t *testing.T) {
 	ts.Start()
 
 	buf := new(bytes.Buffer)
-	h := headers{header{name: "Auth", value: "Yes"}}
+	headers := parameters{parameter{name: "Auth", value: "Yes"}}
+	query := parameters{parameter{name: "foo", value: "bar"}}
 
-	success := process(buf, 1, 10, 200, "http://127.0.0.1:8080?sitemap=true", h)
+	success := process(buf, 1, 10, 200, "http://127.0.0.1:8080?sitemap=true", headers, query)
 
 	if success {
 		t.Error("Expected to return false")
