@@ -12,7 +12,7 @@ const (
 	dTimeout     = 500
 )
 
-type header struct {
+type parameter struct {
 	name  string
 	value string
 }
@@ -25,8 +25,11 @@ func main() {
 	limitFlag := flag.Int("limit", dLimit, "limit for URLs to be checked")
 	timeoutFlag := flag.Int("timeout", dTimeout, "timeout for requests")
 
-	var headersFlag headers
+	var headersFlag parameters
 	flag.Var(&headersFlag, "headers", "headers to send together with requests")
+
+	var queryParamsFlag parameters
+	flag.Var(&queryParamsFlag, "query", "query parameters to send together with requests")
 
 	flag.Parse()
 	args := flag.Args()
@@ -38,7 +41,7 @@ func main() {
 
 	sitemapURL := args[0]
 
-	success := process(os.Stdout, *concurrencyFlag, *limitFlag, *timeoutFlag, sitemapURL, headersFlag)
+	success := process(os.Stdout, *concurrencyFlag, *limitFlag, *timeoutFlag, sitemapURL, headersFlag, queryParamsFlag)
 
 	if success {
 		os.Exit(0)

@@ -21,7 +21,7 @@ by looking for 5xx responses.
 ## Example:
 
 ```
-./heartbeat -limit=100 -concurrency=8 -timeout=500 -headers="one: 1,two: 2" http://some-website.com/sitemap.xml
+./heartbeat -limit=100 -concurrency=8 -timeout=500 -headers="one:1,two:2" -query='foo:bar' http://some-website.com/sitemap.xml
 ```
 
 

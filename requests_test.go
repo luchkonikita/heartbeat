@@ -11,7 +11,7 @@ func TestRequestPage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	code, _ := requestPage(newClient(), ts.URL, headers{header{name: "Name", value: "Value"}})
+	code, _ := requestPage(newClient(), ts.URL, parameters{parameter{name: "Name", value: "Value"}})
 
 	if code != 404 {
 		t.Errorf("Expected to return 404, got %d instead", code)
@@ -43,7 +43,7 @@ func TestRequestSitemap(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	sitemap, _ := requestSitemap(newClient(), ts.URL, headers{header{name: "Name", value: "Value"}})
+	sitemap, _ := requestSitemap(newClient(), ts.URL, parameters{parameter{name: "Name", value: "Value"}})
 
 	for i, url := range urls {
 		if url != sitemap.URLS[i].Loc {
