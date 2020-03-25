@@ -15,7 +15,6 @@ by looking for 5xx responses.
 
 #### Option 2
 - Clone this repo into your $GOPATH.
-- Install dependencies with `go get`.
 - Build the binary with `go build`
 
 ## Example:
